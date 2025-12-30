@@ -1,11 +1,12 @@
 const App = {
     products: [],
     cart: JSON.parse(localStorage.getItem('novacart')) || [],
+    selectedSize: null,
+    currentAction: 'login',
 
     async init() {
         await this.loadProducts();
         this.renderCart();
-        this.setupEventListeners();
     },
 
     async loadProducts() {
@@ -13,7 +14,7 @@ const App = {
             const res = await fetch('api.php?action=getProducts');
             this.products = await res.json();
             this.renderProducts();
-        } catch (e) { console.error("Error cargando productos", e); }
+        } catch (e) { console.error("API Error", e); }
     },
 
     renderProducts() {
@@ -31,25 +32,33 @@ const App = {
 
     openModal(id) {
         const p = this.products.find(x => x.id == id);
+        this.selectedSize = null;
+        document.querySelectorAll('.sizes button').forEach(b => b.classList.remove('active'));
+        
         document.getElementById('modal-img').src = p.imagen;
         document.getElementById('modal-title').innerText = p.nombre;
         document.getElementById('modal-price').innerText = `$${p.precio}`;
-        document.getElementById('product-modal').classList.add('active');
+        toggleModal('product-modal', true);
         
-        document.getElementById('add-to-cart-btn').onclick = () => this.addToCart(p);
+        document.getElementById('add-to-cart-btn').onclick = () => this.validateAddToCart(p);
     },
 
-    addToCart(product) {
-        this.cart.push(product);
+    selectSize(btn) {
+        document.querySelectorAll('.sizes button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this.selectedSize = btn.innerText;
+    },
+
+    validateAddToCart(product) {
+        if (!this.selectedSize) {
+            alert("DEBES SELECCIONAR UN TALLE PARA CONTINUAR");
+            return;
+        }
+        this.cart.push({ ...product, talle: this.selectedSize });
         this.saveCart();
         this.renderCart();
-        this.closeModal();
-        toggleCart(true); // Abre el carrito automáticamente
-    },
-
-    saveCart() {
-        localStorage.setItem('novacart', JSON.stringify(this.cart));
-        document.getElementById('cart-count').innerText = this.cart.length;
+        toggleModal('product-modal', false);
+        toggleCart(true);
     },
 
     renderCart() {
@@ -59,12 +68,12 @@ const App = {
             total += parseFloat(item.precio);
             return `
                 <div class="cart-item">
-                    <img src="${item.imagen}" width="50">
-                    <div>
+                    <img src="${item.imagen}">
+                    <div class="item-info">
                         <h4>${item.nombre}</h4>
-                        <p>$${item.precio}</p>
+                        <p>Talle: ${item.talle} | $${item.precio}</p>
                     </div>
-                    <i data-lucide="trash" onclick="App.removeItem(${index})"></i>
+                    <i data-lucide="trash-2" onclick="App.removeItem(${index})"></i>
                 </div>
             `;
         }).join('');
@@ -77,16 +86,56 @@ const App = {
         this.cart.splice(index, 1);
         this.saveCart();
         this.renderCart();
+    },
+
+    saveCart() { localStorage.setItem('novacart', JSON.stringify(this.cart)); },
+
+    async handleAuth(e) {
+        e.preventDefault();
+        const data = new FormData();
+        data.append('email', document.getElementById('auth-email').value);
+        data.append('pass', document.getElementById('auth-pass').value);
+        data.append('action', this.currentAction);
+
+        const res = await fetch('auth.php', { method: 'POST', body: data });
+        const result = await res.json();
+        const msgBox = document.getElementById('auth-msg');
+        msgBox.innerText = result.message;
+        msgBox.style.color = result.success ? 'var(--electric-blue)' : '#ff4444';
+        if(result.success) setTimeout(() => toggleModal('auth-modal', false), 1500);
+    },
+
+    checkoutWhatsApp() {
+        if (this.cart.length === 0) return alert("TU BOLSA ESTÁ VACÍA");
+        
+        let msg = "*Nueva Orden - NovaWear Elite*\n\n";
+        this.cart.forEach(i => msg += `- ${i.nombre} (Talle: ${i.talle}) - $${i.precio}\n`);
+        msg += `\n*Total: ${document.getElementById('cart-total').innerText}*`;
+        
+        const url = `https://wa.me/5491100000000?text=${encodeURIComponent(msg)}`; // Reemplazar número
+        window.open(url, '_blank');
+        this.cart = [];
+        this.saveCart();
+        this.renderCart();
+        toggleCart(false);
     }
 };
 
-function toggleCart(show = null) {
-    const sidebar = document.getElementById('cart-sidebar');
-    show === true ? sidebar.classList.add('active') : sidebar.classList.toggle('active');
+// Helpers de UI
+function toggleModal(id, show = null) {
+    const m = document.getElementById(id);
+    show === null ? m.classList.toggle('active') : (show ? m.classList.add('active') : m.classList.remove('active'));
 }
 
-function closeModal() {
-    document.getElementById('product-modal').classList.remove('active');
+function toggleCart(show = null) {
+    const c = document.getElementById('cart-sidebar');
+    show === null ? c.classList.toggle('active') : (show ? c.classList.add('active') : c.classList.remove('active'));
+}
+
+function switchAuth(btn, action) {
+    document.querySelectorAll('.auth-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    App.currentAction = action;
 }
 
 document.addEventListener('DOMContentLoaded', () => App.init());

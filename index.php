@@ -14,7 +14,7 @@
         <nav class="container">
             <div class="logo">NOVA<span>WEAR</span></div>
             <div class="nav-icons">
-                <i data-lucide="user" id="open-auth"></i>
+                <i data-lucide="user" onclick="toggleModal('auth-modal')"></i>
                 <div class="cart-icon-wrapper" onclick="toggleCart()">
                     <i data-lucide="shopping-bag"></i>
                     <span id="cart-count">0</span>
@@ -25,44 +25,59 @@
 
     <aside id="cart-sidebar" class="sidebar">
         <div class="sidebar-header">
-            <h3>TU CARRITO</h3>
+            <h3>NOVA-BAG</h3>
             <i data-lucide="x" onclick="toggleCart()" class="close-btn"></i>
         </div>
-        <div id="cart-items" class="cart-body">
-            </div>
+        <div id="cart-items" class="cart-body"></div>
         <div class="sidebar-footer">
             <div class="total-row">
                 <span>TOTAL:</span>
                 <span id="cart-total">$0.00</span>
             </div>
-            <button class="btn-primary full-width">FINALIZAR COMPRA</button>
+            <button class="btn-primary full-width" onclick="App.checkoutWhatsApp()">FINALIZAR COMPRA</button>
         </div>
     </aside>
 
     <main>
-        <section id="product-container" class="product-grid container" style="margin-top: 120px;">
-            </section>
+        <section id="product-container" class="product-grid container" style="margin-top: 120px;"></section>
     </main>
 
     <div id="product-modal" class="modal">
         <div class="modal-content">
-            <i data-lucide="x" class="close-modal" onclick="closeModal()"></i>
+            <i data-lucide="x" class="close-modal" onclick="toggleModal('product-modal')"></i>
             <div class="modal-grid">
-                <div class="modal-img-container">
-                    <img id="modal-img" src="" alt="">
-                </div>
+                <div class="modal-img-container"><img id="modal-img" src="" alt=""></div>
                 <div class="modal-details">
                     <h2 id="modal-title"></h2>
                     <p id="modal-price" class="price"></p>
                     <div class="size-selector">
-                        <span>TALLA:</span>
-                        <div class="sizes">
-                            <button>S</button><button>M</button><button>L</button><button>XL</button>
+                        <span>SELECCIONAR TALLE:</span>
+                        <div class="sizes" id="size-options">
+                            <button onclick="App.selectSize(this)">S</button>
+                            <button onclick="App.selectSize(this)">M</button>
+                            <button onclick="App.selectSize(this)">L</button>
+                            <button onclick="App.selectSize(this)">XL</button>
                         </div>
                     </div>
                     <button id="add-to-cart-btn" class="btn-primary">AÑADIR A NOVA-BAG</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div id="auth-modal" class="modal">
+        <div class="modal-content auth-box">
+            <i data-lucide="x" class="close-modal" onclick="toggleModal('auth-modal')"></i>
+            <div class="auth-tabs">
+                <button class="active" onclick="switchAuth(this, 'login')">LOGIN</button>
+                <button onclick="switchAuth(this, 'register')">REGISTRO</button>
+            </div>
+            <form id="auth-form" onsubmit="App.handleAuth(event)">
+                <input type="email" id="auth-email" placeholder="EMAIL" required>
+                <input type="password" id="auth-pass" placeholder="PASSWORD" required>
+                <button type="submit" class="btn-primary full-width">ACCEDER</button>
+            </form>
+            <div id="auth-msg"></div>
         </div>
     </div>
 
